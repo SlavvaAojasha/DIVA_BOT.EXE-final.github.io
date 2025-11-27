@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DIVA_BOT.EXE</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div id="chat-container">
+    <div id="header">C:\> DIVA_BOT.EXE</div>
+    <div id="chat-log">
+      <div class="bot-msg">C:\> Booting sass engine... Done. Attitude: Unfiltered Savage.</div>
+    </div>
+    <div id="input-container">
+      <span>C:\></span>
+      <input type="text" id="user-input" placeholder="Type something, or don’t. I don’t care." autocomplete="off">
+      <button id="send-btn">SEND</button>
+    </div>
+  </div>
+
+<script src="script.js">
+    // ** 1. KEEP YOUR API KEY HERE **
+    const GEMINI_API_KEY = "AIzaSyAS6N_RicM_b4riToWKjimjMX_4Vu4Vv7o"; 
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const chatLog = document.getElementById("chat-log");
+        const userInput = document.getElementById("user-input");
+        const sendBtn = document.getElementById("send-btn");
+        let idleTimer;
+
+        // ** 2. NEW: Create a variable to store conversation history **
+        let chatHistory = [];
+
+        // Using the current active model
+        const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + GEMINI_API_KEY;
+
+        function appendMessage(message, sender) {
+            const msg = document.createElement("div");
+            msg.className = sender === "user" ? "user-msg" : "bot-msg";
+            msg.textContent = "C:\\> " + message; 
+            chatLog.appendChild(msg);
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }
+
+        function resetIdleTimer() {
+            clearTimeout(idleTimer);
+            idleTimer = setTimeout(() => {
+                appendMessage("Two minutes of silence. I'm bored. Goodbye.", "bot");
+                userInput.disabled = true;
+                sendBtn.disabled = true;
+            }, 120000); 
+        }
+
+        sendBtn.addEventListener("click", sendMessage);
+        userInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        userInput.addEventListener("input", resetIdleTimer);
+
+        async function sendMessage() {
+            const userMessage = userInput.value.trim();
+            if (!userMessage) return;
+
+            appendMessage(userMessage, "user");
+            userInput.value = ""; 
+            userInput.disabled = true;
+            sendBtn.disabled = true;
+
+            // ** 3. NEW: Add user message to history BEFORE sending **
+            chatHistory.push({
+                role: "user",
+                parts: [{ text: userMessage }]
+            });
+
+            const botMessage = await getGeminiResponse();
+            appendMessage(botMessage, "bot");
+
+            // ** 4. NEW: Add bot response to history AFTER receiving it **
+            chatHistory.push({
+                role: "model",
+                parts: [{ text: botMessage }]
+            });
+
+            userInput.disabled = false;
+            sendBtn.disabled = false;
+            userInput.focus(); 
+            resetIdleTimer(); 
+        }
+
+        async function getGeminiResponse() {
+            // ** 5. NEW: Send the WHOLE history, not just one input **
+            const payload = {
+                contents: chatHistory, // <--- This now contains the full conversation
+                systemInstruction: {
+                    parts: [{ text: "You are DIVA_BOT.EXE. You are sarcastic, efficient, and have an 'Unfiltered Savage' attitude. Your responses should be short, slightly rude, and avoid being overly helpful." }]
+                }
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    return `Error: ${errorData.error?.message || "Check console."}`;
+                }
+
+                const data = await response.json();
+                return data.candidates?.[0]?.content?.parts?.[0]?.text || "No response.";
+
+            } catch (error) {
+                console.error("Network Error:", error);
+                return "Fatal Error: Connection failed.";
+            }
+        }
+        
+        resetIdleTimer();
+    });
+</script>
+  <footer>
+    <p>DIVA_BOT.EXE v4.0 — Unfiltered Savage Edition. Running on [CLIENT_SYSTEM].</p>
+  </footer>
+</body>
+</html>
