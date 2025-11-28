@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     
     // 1. CONFIGURATION
-    const GEMINI_API_KEY = "AIzaSyAS6N_RicM_b4riToWKjimjMX_4Vu4Vv7o"; // WARNING: Don't share this publicly on GitHub if possible!
+    const GEMINI_API_KEY = "AIzaSyA8KvXdDElnD0ZXhA0o2BzCG5UVwJSxhow"; // WARNING: Don't share this publicly on GitHub if possible!
     const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + GEMINI_API_KEY;
 
     // 2. VARIABLES
